@@ -1,19 +1,26 @@
-package bgu.spl.net.srv;
+package bgu.spl.net.system.responses;
 
 import java.util.Arrays;
 import java.util.Locale;
 
-public class Post {
+public class Post extends Response {
     private String content;
     private final String creator;
 
     public Post(String content, String creator){
+        super(5);
         this.content = content;
         this.creator = creator;
     }
     public String getContent(){
         return content;
     }
+
+    @Override
+    public boolean getType() {
+        return true;
+    }
+
     public String getCreator(){
         return creator;
     }

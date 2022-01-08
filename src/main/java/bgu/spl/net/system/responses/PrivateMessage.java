@@ -1,16 +1,17 @@
-package bgu.spl.net.srv;
+package bgu.spl.net.system.responses;
 
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
-public class PrivateMessage {
+public class PrivateMessage extends Response {
     private String content;
     private final String creator;
     private final String toUser;
     private final Date date;
 
     public PrivateMessage(String content, String creator, String toUser, Date date){
+        super(6);
         this.content = content;
         this.creator = creator;
         this.toUser = toUser;
@@ -20,6 +21,12 @@ public class PrivateMessage {
     public String getContent(){
         return content;
     }
+
+    @Override
+    public boolean getType() {
+        return true;
+    }
+
     public String getCreator(){
         return creator;
     }

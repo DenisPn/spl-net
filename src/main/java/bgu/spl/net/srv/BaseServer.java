@@ -6,8 +6,10 @@ import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.system.ConnectionsImpl;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.function.Supplier;
 
 public abstract class BaseServer<T> implements Server<T> {
@@ -16,6 +18,8 @@ public abstract class BaseServer<T> implements Server<T> {
     private final Supplier<BidiMessagingProtocol<T>> protocolFactory;
     private final Supplier<MessageEncoderDecoder<T>> encdecFactory;
     private ServerSocket sock;
+    private final HashMap<InetAddress,Integer> socketMap;
+    int idTracker=0;
 
     public BaseServer(
             int port,
@@ -26,6 +30,7 @@ public abstract class BaseServer<T> implements Server<T> {
         this.protocolFactory = protocolFactory;
         this.encdecFactory = encdecFactory;
 		this.sock = null;
+        socketMap=new HashMap<>();
     }
 
     @Override
@@ -37,14 +42,22 @@ public abstract class BaseServer<T> implements Server<T> {
             this.sock = serverSock; //just to be able to close
 
             while (!Thread.currentThread().isInterrupted()) {
-
+                int id;
                 Socket clientSock = serverSock.accept();
+                if(!socketMap.containsKey(clientSock)){
+                    id=idTracker;
+                    socketMap.put(clientSock.getLocalAddress(),id);
+                    idTracker++;
+                }
+                else{
+                    id=socketMap.get(clientSock);
+                }
 
                 BlockingConnectionHandler<T> handler = new BlockingConnectionHandler<T>(
                         clientSock,
                         encdecFactory.get(),
                         protocolFactory.get(),
-                        connections);
+                        connections,id);
 
                 execute(handler);
             }

@@ -11,29 +11,32 @@ import java.util.List;
 
 public class User {
 
-    private final int id;
+    private int connectedClientId;
     private final Date birthDay;
     private final String userName;
     private final String password;
-    private boolean loggedIn=false;
     private List<String> followers;
     private List<String> follows;
     private List<String> blocks;
     private int numberOfPosts;
 
 
-    public User(int id, Date birthDay, String userName, String password) {
-        this.id = id;
+    public User(Date birthDay, String userName, String password) {
         this.birthDay = birthDay;
         this.userName = userName;
         this.password = password;
+        connectedClientId=-1;
         followers = new ArrayList<>();
         follows = new ArrayList<>();
         blocks = new ArrayList<>();
         numberOfPosts = 0;
     }
-    public Date getBirthDay(){
-        return  birthDay;
+    public String getBirthDay(){
+        return  birthDay.toString();
+    }
+    public int getAge(){
+        Date date=new Date(System.currentTimeMillis());
+        return date.getYear()-birthDay.getYear();
     }
     public int getNumberOfPosts(){
         return numberOfPosts;
@@ -45,11 +48,11 @@ public class User {
         return follows.size();
     }
         public int getId() {
-        return id;
+        return connectedClientId;
     }
 
     public boolean getLoggedIn(){
-        return loggedIn;
+        return connectedClientId!=-1;
     }
     public boolean isFollowed(String userName){
         return follows.contains(userName);
@@ -106,23 +109,21 @@ public class User {
         return blocks.contains(userName);
     }
 
-    public Response logIn(String password){
-        if(loggedIn)
-            return new Error(2,"User Already Logged In, login failed");
+    public Response logIn(int id,String password){
+        if(connectedClientId!=-1)
+            return new Error(2,"requested user is already in use, login failed");
         else if(password.equals(this.password)){
-            loggedIn=true;
+            connectedClientId=id;
             return new Ack(2, "login successful");
         }
         else return new Error(2,"Incorrect Password. login failed");
     }
     public Response logout(){
-        if (loggedIn)
-            return new Ack(3, "logout successful");
-        else
-            return new Error(3,"User not Logged In");
+        connectedClientId=-1;
+        return new Ack(3, "logout successful");
     }
     public Response follow(String userName){
-        if(!loggedIn)
+        if(connectedClientId==-1)
             return new Error(4,"User not Logged In");
         if(addFollows(userName))
             return new Ack(4, "follow successful");//TODO: not in format
@@ -130,7 +131,7 @@ public class User {
             return new Error(4,"already followed");
     }
     public Response unfollow(String userName){
-        if(!loggedIn)
+        if(connectedClientId==-1)
             return new Error(4,"User not Logged In");
         if(removeFollow(userName))
             return new Ack(4, "unfollow successful");//TODO: not in format

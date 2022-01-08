@@ -7,18 +7,18 @@ import bgu.spl.net.srv.bidi.ConnectionHandler;
 import java.io.Serializable;
 import java.util.HashMap;
 
-public class ConnectionsImpl implements Connections<Serializable> {
-    private final HashMap<Integer, ConnectionHandler<String>> connections=new HashMap<>();
+public class ConnectionsImpl<T> implements Connections<T> {
+    private final HashMap<Integer, ConnectionHandler<T>> connections=new HashMap<>();
     @Override
-    public boolean send(int connectionId, Serializable msg) {
+    public boolean send(int connectionId, T msg) {
         if(!connections.containsKey(connectionId))
             return false;
-        connections.get(connectionId).send((String) msg);
+        connections.get(connectionId).send( msg);
         return true;
     }
 
     @Override
-    public void broadcast(Serializable msg) {
+    public void broadcast(T msg) {
 
     }
 
@@ -26,7 +26,10 @@ public class ConnectionsImpl implements Connections<Serializable> {
     public void disconnect(int connectionId) {
         connections.remove(connectionId);
     }
-    public void connect(int id,BlockingConnectionHandler<String> handler){
+    public void connect(int id,BlockingConnectionHandler<T> handler){
         connections.put(id,handler);
+    }
+    public boolean connected(int id){
+        return connections.containsKey(id);
     }
 }

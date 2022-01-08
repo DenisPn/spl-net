@@ -1,12 +1,12 @@
 package bgu.spl.net.system;
 
-import bgu.spl.net.api.bidi.Connections;
-import bgu.spl.net.srv.Post;
-import bgu.spl.net.srv.PrivateMessage;
+import bgu.spl.net.system.responses.Post;
+import bgu.spl.net.system.responses.PrivateMessage;
 import bgu.spl.net.srv.User;
 import bgu.spl.net.system.responses.Ack;
 import bgu.spl.net.system.responses.Error;
 import bgu.spl.net.system.responses.Response;
+import javafx.scene.shape.Shape3D;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -17,108 +17,128 @@ public class BGSInstance {
     private final HashMap<String, User> users;
     private HashMap<String, Post> posts;
     private HashMap<String, PrivateMessage> privateMessages;
-//    private final ConnectionsImpl connections;
-    int idTracker=0;
+    private HashMap<Integer,User> loggedIn;
     public BGSInstance() {
         this.users = new HashMap<>();
         posts = new HashMap<>();
         privateMessages = new HashMap<>();
-     //   this.connections=connections;
+        loggedIn=new HashMap<>();
     }
 
-    public Response register(String userName,String password, Date bday) {
+    public Response register(String userName,String password, String bday) {
         if (users.containsKey(userName))
             return new Error(1, "Username already exists");
         else {
-            User user = new User(idTracker, bday, userName, password);
-            idTracker++;
-            users.put(userName,user);
-            return new Ack(1,"Register Complete");
+            try {
+                Date date = new Date(bday);
+                User user = new User(date, userName, password);
+                users.put(userName,user);
+                return new Ack(1,"Register Complete");
+            }
+            catch (IllegalArgumentException e){
+                return new Error(1,"Invalid birth date");
+            }
+
         }
     }
-    public Response login(String userName,String password, Byte captcha){
+    public Response login(int id,String userName,String password, Byte captcha,ConnectionsImpl connections){
+        if(loggedIn.containsKey(id))
+            return new Error(2,"User is already logged in,logout before logging in to another user");
         if(captcha == 0)
             return new Error(2,"Captcha is 0");
         if(!users.containsKey(userName))
             return new Error(2,"Username does not exists");
-        return users.get(userName).logIn(password);
+        User user=users.get(userName);
+        Response response=user.logIn(id,password);
+        if(response.getType())
+            loggedIn.put(user.getId(),user);
+        return response;
     }
-    public Response logout(String userName){
-        return users.get(userName).logout();
+    public Response logout(int id){
+        if(!loggedIn.containsKey(id))
+            return new Error(2,"User not logged in");
+        User user=loggedIn.get(id);
+        Response response= user.logout();
+        if(response.getType())
+            loggedIn.remove(user.getId(),user);
+        return response;
     }
-    public Response follow(String userName, Byte followUnfollow, String toFollow){
+    public Response follow(int id, Byte followUnfollow, String toFollow){
+        if(!loggedIn.containsKey(id))
+            return new Error(4,"User not Logged In");
         if(!users.containsKey(toFollow))
             return new Error(4,"user to follow does not exist");
+        User user=loggedIn.get(id);
         if(followUnfollow == 0) {
-            if (users.get(userName).getLoggedIn())
-                users.get(toFollow).addFollower(userName);
-            return users.get(userName).follow(toFollow);
+                users.get(toFollow).addFollower(user.getUserName());
+            return users.get(user.getUserName()).follow(toFollow);
         }
         else {
-            if (users.get(userName).getLoggedIn())
-                users.get(toFollow).removeFollower(userName);
-            return users.get(userName).unfollow(toFollow);
+                users.get(toFollow).removeFollower(user.getUserName());
+            return users.get(user.getUserName()).unfollow(toFollow);
         }
     }
-    public Response post(String userName, String content){
-        if(!users.get(userName).getLoggedIn())
+    public Response post(int id, String content){
+        if(!loggedIn.containsKey(id))
             return new Error(5,"User not Logged In");
-        Post p = new Post(content, userName);
-        posts.put(userName, p);
-        users.get(userName).post();
+        User user=loggedIn.get(id);
+        Post p = new Post(content, user.getUserName());
+        posts.put(user.getUserName(), p);
+        users.get(user.getUserName()).post();
         return new Ack(5,"post sent");
     }
-    public Response PM(String userName, String content, String sendTo, Date date){
-        if(!users.get(userName).getLoggedIn())
+    public Response PM(int id, String content, String sendTo, Date date){
+        if(!loggedIn.containsKey(id))
             return new Error(6,"User not Logged In");
+        User user=loggedIn.get(id);
         if(!users.containsKey(sendTo))
             return new Error(6,"user to send to does not exist");
-        if(!users.get(userName).doesFollow(sendTo))
+        if(!user.doesFollow(sendTo))
             return new Error(6,"Not following the user to send to");
-        PrivateMessage pm = new PrivateMessage(content, userName, sendTo, date);
-        privateMessages.put(userName, pm);
+        PrivateMessage pm = new PrivateMessage(content, user.getUserName(), sendTo, date);
+        privateMessages.put(user.getUserName(), pm);
         return new Ack(6,"pm sent");
+    }
+    private String getStats(User user){
+        return user.getUserName() + " " +
+                user.getAge() + " " +
+                user.getNumberOfPosts() + " " +
+                user.getNumberOfFollowers() + " " +
+                user.getNumberOfFollows() + " ";
     }
     public Response LOGSTAT(String userName){
         if(!users.get(userName).getLoggedIn())
             return new Error(7,"User not Logged In");
-        String stats = "";
+        String stats= "";
         for (String un:users.keySet()) {
             User user = users.get(un);
             if(user.getLoggedIn()){
-                stats += user.getUserName() + " ";
-                stats += user.getBirthDay() + " ";//TODO: age instead of birthday
-                stats += user.getNumberOfPosts() + " ";
-                stats += user.getNumberOfFollowers() + " ";
-                stats += user.getNumberOfFollows() + " ";
+                stats=getStats(user);
             }
         }
-        return new Ack(7,stats);
+        return new Ack(7, stats.toString());
     }
-    public Response STAT(String userName, ArrayList<String> userList){
-        if(!users.get(userName).getLoggedIn())
+    public Response STAT(int id, ArrayList<String> userList){
+        if(!loggedIn.containsKey(id))
             return new Error(8,"User not Logged In");
-        String stats = "";
+        StringBuilder stats = new StringBuilder();
         for (String un:userList) {
             if(!users.containsKey(un)){
                 return new Error(8,"User does not exist");
             }
             User user = users.get(un);
-            stats += user.getUserName() + " ";
-            stats += user.getBirthDay() + " ";//TODO: age instead of birthday
-            stats += user.getNumberOfPosts() + " ";
-            stats += user.getNumberOfFollowers() + " ";
-            stats += user.getNumberOfFollows() + " ";
+            stats.append(getStats(user)).append("\n");
         }
-        return new Ack(8,stats);
+        return new Ack(8, stats.toString());
     }
-    public Response block(String userName, String toBlock){
+    public Response block(int id, String toBlock){
         if(!users.containsKey(toBlock))
-            return new Error(12,"user to follow does not exist");
-        if(!users.get(userName).getLoggedIn())
+            return new Error(12,"user to block does not exist");
+        if(!loggedIn.containsKey(id))
             return new Error(12,"User not Logged In");
-        users.get(userName).addBlock(toBlock);
-        users.get(toBlock).addBlock(userName);
-        return new Ack(12,"blocked");
+        User user=loggedIn.get(id);
+        users.get(user.getUserName()).addBlock(toBlock);
+        users.get(toBlock).addBlock(user.getUserName());
+        return new Ack(12,toBlock+" is now blocked");
     }
 }
