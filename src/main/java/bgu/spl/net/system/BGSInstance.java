@@ -6,11 +6,11 @@ import bgu.spl.net.srv.User;
 import bgu.spl.net.system.responses.Ack;
 import bgu.spl.net.system.responses.Error;
 import bgu.spl.net.system.responses.Response;
-import javafx.scene.shape.Shape3D;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 public class BGSInstance {
 
@@ -18,11 +18,13 @@ public class BGSInstance {
     private HashMap<String, Post> posts;
     private HashMap<String, PrivateMessage> privateMessages;
     private HashMap<Integer,User> loggedIn;
+    private String[] bannedWord;
     public BGSInstance() {
         this.users = new HashMap<>();
         posts = new HashMap<>();
         privateMessages = new HashMap<>();
         loggedIn=new HashMap<>();
+
     }
 
     public Response register(String userName,String password, String bday) {
@@ -33,12 +35,11 @@ public class BGSInstance {
                 Date date = new Date(bday);
                 User user = new User(date, userName, password);
                 users.put(userName,user);
-                return new Ack(1,"Register Complete");
+                return new Ack(1,"Register complete");
             }
             catch (IllegalArgumentException e){
                 return new Error(1,"Invalid birth date");
             }
-
         }
     }
     public Response login(int id,String userName,String password, Byte captcha,ConnectionsImpl connections){
@@ -109,7 +110,7 @@ public class BGSInstance {
     public Response LOGSTAT(String userName){
         if(!users.get(userName).getLoggedIn())
             return new Error(7,"User not Logged In");
-        String stats= "";
+        String stats= "STATS-8 ";
         for (String un:users.keySet()) {
             User user = users.get(un);
             if(user.getLoggedIn()){
@@ -118,10 +119,11 @@ public class BGSInstance {
         }
         return new Ack(7, stats.toString());
     }
-    public Response STAT(int id, ArrayList<String> userList){
+    public Response STAT(int id, String[] userList){
         if(!loggedIn.containsKey(id))
             return new Error(8,"User not Logged In");
         StringBuilder stats = new StringBuilder();
+        stats.append("STATS-8 ");
         for (String un:userList) {
             if(!users.containsKey(un)){
                 return new Error(8,"User does not exist");

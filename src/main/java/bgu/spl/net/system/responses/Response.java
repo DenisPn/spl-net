@@ -4,7 +4,7 @@ public abstract class Response {
     protected final int opCode;
  //   protected final int clientId;
 
-    protected Response(int opCode,int id) {
+    protected Response(int opCode) {
         this.opCode = opCode;
 
     //    this.optional=optional;

@@ -8,6 +8,7 @@ import java.io.Serializable;
 public class Stat implements Command<String>{
 
     public Serializable execute(int id, String arg, BGSInstance instance, ConnectionsImpl connections) {
-        return null;
+        String[] users=toString().split("\\s | \\|+"); //split by space or '|'
+        return instance.STAT(id,users).getContent();
     }
 }

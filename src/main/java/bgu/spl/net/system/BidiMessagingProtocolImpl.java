@@ -29,7 +29,7 @@ public class BidiMessagingProtocolImpl implements BidiMessagingProtocol<Serializ
     public void process(Serializable message) {
         Short opCode=Short.valueOf(message.toString().substring(0,2));
         Command command=commandFactory.get(opCode).get();
-        command.execute(id,message.toString().substring(3,message.toString().length()-1), bgs);
+        command.execute(id,message.toString().substring(3,message.toString().length()-1), bgs,connections);
     }
 
     @Override

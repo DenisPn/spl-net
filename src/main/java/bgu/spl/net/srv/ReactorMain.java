@@ -1,20 +1,16 @@
 package bgu.spl.net.srv;
 
-import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.system.BGSInstance;
 import bgu.spl.net.system.BidiMessagingProtocolImpl;
-import bgu.spl.net.system.ConnectionsImpl;
 import bgu.spl.net.system.MessageEncoderDecoder;
 import bgu.spl.net.system.commands.*;
-import javafx.geometry.Pos;
 
 import java.util.HashMap;
 import java.util.function.Supplier;
 
-public class BGSMain {
-
+public class ReactorMain {
     public static void main(String[] args){
-    //    ConnectionsImpl connections=new ConnectionsImpl();
+        //    ConnectionsImpl connections=new ConnectionsImpl();
         BGSInstance bgs=new BGSInstance();
         HashMap<Short, Supplier<Command>> factory=new HashMap();
         factory.put((short) 1, Register::new);
@@ -27,10 +23,11 @@ public class BGSMain {
         factory.put((short) 8, Stat::new);
         factory.put((short) 9, Notification::new);
         factory.put((short) 12, Block::new);
-            Server.threadPerClient(
-                    7777, //port
-                    () -> new BidiMessagingProtocolImpl(bgs,factory),
-                    MessageEncoderDecoder::new //message encoder decoder factory
-            ).serve();
+        Server.reactor(
+                Runtime.getRuntime().availableProcessors(),
+                7777, //port
+                () -> new BidiMessagingProtocolImpl(bgs,factory),
+                MessageEncoderDecoder::new //message encoder decoder factory
+        ).serve();
     }
 }

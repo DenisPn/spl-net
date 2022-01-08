@@ -13,7 +13,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
     public boolean send(int connectionId, T msg) {
         if(!connections.containsKey(connectionId))
             return false;
-        connections.get(connectionId).send( msg);
+        connections.get(connectionId).send(msg);
         return true;
     }
 
