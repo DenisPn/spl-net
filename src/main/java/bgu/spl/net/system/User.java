@@ -1,4 +1,4 @@
-package bgu.spl.net.srv;
+package bgu.spl.net.system;
 
 import bgu.spl.net.system.ConnectionsImpl;
 import bgu.spl.net.system.responses.Ack;

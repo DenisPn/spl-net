@@ -2,15 +2,12 @@ package bgu.spl.net.system;
 
 import bgu.spl.net.system.responses.Post;
 import bgu.spl.net.system.responses.PrivateMessage;
-import bgu.spl.net.srv.User;
 import bgu.spl.net.system.responses.Ack;
 import bgu.spl.net.system.responses.Error;
 import bgu.spl.net.system.responses.Response;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 
 public class BGSInstance {
 
