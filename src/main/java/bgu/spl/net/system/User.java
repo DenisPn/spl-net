@@ -3,8 +3,10 @@ package bgu.spl.net.system;
 import bgu.spl.net.system.ConnectionsImpl;
 import bgu.spl.net.system.responses.Ack;
 import bgu.spl.net.system.responses.Error;
+import bgu.spl.net.system.responses.Message;
 import bgu.spl.net.system.responses.Response;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -15,10 +17,11 @@ public class User {
     private final Date birthDay;
     private final String userName;
     private final String password;
-    private List<String> followers;
-    private List<String> follows;
-    private List<String> blocks;
-    private int numberOfPosts;
+    private List<String> followers;//TODO: synchronized?
+    private List<String> follows;//TODO: synchronized?
+    private List<String> blocks;//TODO: synchronized?
+    private int numberOfPosts;//TODO: synchronized?
+    private ArrayDeque<String> mailBox;//TODO: synchronized?
 
 
     public User(Date birthDay, String userName, String password) {
@@ -30,6 +33,7 @@ public class User {
         follows = new ArrayList<>();
         blocks = new ArrayList<>();
         numberOfPosts = 0;
+        mailBox = new ArrayDeque<>();
     }
     public String getBirthDay(){
         return  birthDay.toString();
@@ -47,7 +51,7 @@ public class User {
     public int getNumberOfFollows() {
         return follows.size();
     }
-        public int getId() {
+    public int getId() {
         return connectedClientId;
     }
 
@@ -62,6 +66,9 @@ public class User {
     }
     public String getUserName() {
         return userName;
+    }
+    public List<String> getFollowers(){
+        return followers;
     }
 
     public String getPassword() {
@@ -87,17 +94,18 @@ public class User {
         follows.remove(userName);
         return true;
     }
-    public boolean removeBlock(String userName){
-        if(!blocks.contains(userName))
-            return false;
-        blocks.remove(userName);
-        return true;
-    }
     public void addBlock (String userName){
         if(!blocks.contains(userName))
             blocks.add(userName);
         removeFollower(userName);
         removeFollow(userName);
+    }
+    public String getStats(){
+        return userName + " " +
+                getAge() + " " +
+                numberOfPosts + " " +
+                getNumberOfFollowers() + " " +
+                getNumberOfFollows() + " ";
     }
     public boolean isFollowedBy(String userName){
         return followers.contains(userName);
@@ -119,14 +127,18 @@ public class User {
         else return new Error(2,"Incorrect Password. login failed");
     }
     public Response logout(){
-        connectedClientId=-1;
-        return new Ack(3, "logout successful");
+        if (connectedClientId != -1){
+            connectedClientId=-1;
+            return new Ack(3, "logout successful");
+        }
+        else
+            return new Error(3,"no user Logged In");
     }
     public Response follow(String userName){
         if(connectedClientId==-1)
             return new Error(4,"User not Logged In");
         if(addFollows(userName))
-            return new Ack(4, "follow successful");//TODO: not in format
+            return new Ack(4,"0" + userName);
         else
             return new Error(4,"already followed");
     }
@@ -134,8 +146,17 @@ public class User {
         if(connectedClientId==-1)
             return new Error(4,"User not Logged In");
         if(removeFollow(userName))
-            return new Ack(4, "unfollow successful");//TODO: not in format
+            return new Ack(4, "1" + userName);
         else
             return new Error(4,"already unfollowed");
+    }
+    public void addToMailBox(String message){
+        mailBox.add(message);
+    }
+    public String popFromMailBox(){
+        return mailBox.pop();
+    }
+    public boolean haveMail(){
+        return !mailBox.isEmpty();
     }
 }
