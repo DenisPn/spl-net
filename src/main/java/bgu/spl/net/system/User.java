@@ -17,11 +17,12 @@ public class User {
     private final Date birthDay;
     private final String userName;
     private final String password;
-    private List<String> followers;//TODO: synchronized?
-    private List<String> follows;//TODO: synchronized?
-    private List<String> blocks;//TODO: synchronized?
-    private int numberOfPosts;//TODO: synchronized?
-    private ArrayDeque<String> mailBox;//TODO: synchronized?
+    private List<String> followers;
+    private List<String> follows;
+    private List<String> blocks;
+    private int numberOfPosts;
+    private ArrayDeque<String> mailBox;
+    private final Object followBlockLock=new Object();
 
 
     public User(Date birthDay, String userName, String password) {
@@ -76,8 +77,10 @@ public class User {
     }
 
     public void addFollower (String userName){
-        if(!followers.contains(userName))
-            followers.add(userName);
+        synchronized (followBlockLock) {
+            if (!followers.contains(userName))
+                followers.add(userName);
+        }
     }
     public boolean addFollows (String userName){
         if(follows.contains(userName))
@@ -86,19 +89,25 @@ public class User {
         return true;
     }
     public void removeFollower(String userName){
-        followers.remove(userName);
+        synchronized (followBlockLock) {
+            followers.remove(userName);
+        }
     }
     public boolean removeFollow(String userName){
-        if(!follows.contains(userName))
-            return false;
-        follows.remove(userName);
-        return true;
+        synchronized (followBlockLock) {
+            if (!follows.contains(userName))
+                return false;
+            follows.remove(userName);
+            return true;
+        }
     }
     public void addBlock (String userName){
-        if(!blocks.contains(userName))
-            blocks.add(userName);
-        removeFollower(userName);
-        removeFollow(userName);
+        synchronized (followBlockLock) {
+            if (!blocks.contains(userName))
+                blocks.add(userName);
+            removeFollower(userName);
+            removeFollow(userName);
+        }
     }
     public String getStats(){
         return userName + " " +
@@ -135,20 +144,25 @@ public class User {
             return new Error(3,"no user Logged In");
     }
     public Response follow(String userName){
-        if(connectedClientId==-1)
-            return new Error(4,"User not Logged In");
-        if(addFollows(userName))
-            return new Ack(4,"0" + userName);
-        else
-            return new Error(4,"already followed");
+        synchronized (followBlockLock) {
+            if (connectedClientId == -1)
+                return new Error(4, "User not Logged In");
+            if (addFollows(userName))
+                return new Ack(4, "0" + userName);
+
+            else
+                return new Error(4, "already followed");
+        }
     }
     public Response unfollow(String userName){
-        if(connectedClientId==-1)
-            return new Error(4,"User not Logged In");
-        if(removeFollow(userName))
-            return new Ack(4, "1" + userName);
-        else
-            return new Error(4,"already unfollowed");
+        synchronized (followBlockLock) {
+            if (connectedClientId == -1)
+                return new Error(4, "User not Logged In");
+            if (removeFollow(userName))
+                return new Ack(4, "1" + userName);
+            else
+                return new Error(4, "already unfollowed");
+        }
     }
     public void addToMailBox(String message){
         mailBox.add(message);

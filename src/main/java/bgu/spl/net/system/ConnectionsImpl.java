@@ -26,12 +26,6 @@ public class ConnectionsImpl<T> implements Connections<T> {
     @Override
     public void disconnect(int connectionId) {
         ConnectionHandler<T> t=connections.remove(connectionId);
-        try {
-            t.close();
-        }
-        catch (IOException e){
-
-        }
     }
     public void connect(int id,ConnectionHandler<T> handler){
         connections.put(id,handler);

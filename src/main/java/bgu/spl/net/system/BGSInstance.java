@@ -7,17 +7,18 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class BGSInstance {
 
-    private final HashMap<String, User> users;//TODO: synchronized?
-    private List<Message> messages;//TODO: synchronized?
-    private HashMap<Integer,User> loggedIn;//TODO: synchronized?
+    private final ConcurrentHashMap<String, User> users;
+    private List<Message> messages;
+    private ConcurrentHashMap<Integer,User> loggedIn;
     private String[] bannedWord;
     public BGSInstance() {
-        users = new HashMap<>();
+        users = new ConcurrentHashMap<>();
         messages = new ArrayList<>();
-        loggedIn=new HashMap<>();
+        loggedIn=new ConcurrentHashMap<>();
     }
 
     public Response register(String userName,String password, String bday) {
@@ -87,10 +88,27 @@ public class BGSInstance {
         for (String userName:user.getFollowers()) {
             User follower = users.get(userName);
             if(follower.getLoggedIn()){
-                connections.send(follower.getId(),content);
+                connections.send(follower.getId(),notification);
             }
             else
                 follower.addToMailBox(notification);
+        }
+        List<String> tagged = new ArrayList<>();
+        String[] words = content.split(" ");
+        for (String word: words) {
+            if(word.charAt(0) == '@'){
+                if(users.values().contains(word.substring(1)) && !user.getFollowers().contains(word.substring(1))){
+                    tagged.add(word);
+                }
+            }
+        }
+        for (String tagUserName:tagged) {
+            User tagUser = users.get(tagUserName);
+            if(tagUser.getLoggedIn()){
+                connections.send(tagUser.getId(),notification);
+            }
+            else
+                tagUser.addToMailBox(notification);
         }
         return new Ack(5,"post sent");
     }
@@ -107,7 +125,7 @@ public class BGSInstance {
         messages.add(pm);
         User sendToUser = users.get(sendTo);
         if(sendToUser.getLoggedIn()){
-            connections.send(sendToUser.getId(),content);
+            connections.send(sendToUser.getId(),notification);
         }
         else
             sendToUser.addToMailBox(notification);
