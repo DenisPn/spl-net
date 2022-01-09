@@ -10,9 +10,9 @@ import java.util.List;
 
 public class BGSInstance {
 
-    private final HashMap<String, User> users;
-    private List<Message> messages;
-    private HashMap<Integer,User> loggedIn;
+    private final HashMap<String, User> users;//TODO: synchronized?
+    private List<Message> messages;//TODO: synchronized?
+    private HashMap<Integer,User> loggedIn;//TODO: synchronized?
     private String[] bannedWord;
     public BGSInstance() {
         users = new HashMap<>();

@@ -17,11 +17,11 @@ public class User {
     private final Date birthDay;
     private final String userName;
     private final String password;
-    private List<String> followers;
-    private List<String> follows;
-    private List<String> blocks;
-    private int numberOfPosts;
-    private ArrayDeque<String> mailBox;
+    private List<String> followers;//TODO: synchronized?
+    private List<String> follows;//TODO: synchronized?
+    private List<String> blocks;//TODO: synchronized?
+    private int numberOfPosts;//TODO: synchronized?
+    private ArrayDeque<String> mailBox;//TODO: synchronized?
 
 
     public User(Date birthDay, String userName, String password) {
