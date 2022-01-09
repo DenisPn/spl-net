@@ -47,7 +47,7 @@ public class BGSInstance {
         if(response.getType()){
             loggedIn.put(user.getId(),user);
             while (user.haveMail()){
-                //send to user user.popFromMailBox();TODO: send to user notification
+                connections.send(id,user.popFromMailBox());
             }
         }
         return response;
@@ -61,13 +61,13 @@ public class BGSInstance {
             loggedIn.remove(user.getId(),user);
         return response;
     }
-    public Response follow(int id, Byte followUnfollow, String toFollow){
+    public Response follow(int id, char followUnfollow, String toFollow){
         if(!loggedIn.containsKey(id))
             return new Error(4,"User not Logged In");
         if(!users.containsKey(toFollow))
             return new Error(4,"user to follow does not exist");
         User user=loggedIn.get(id);
-        if(followUnfollow == 0) {
+        if(followUnfollow == '0') {
                 users.get(toFollow).addFollower(user.getUserName());
                 return user.follow(toFollow);
         }
@@ -76,7 +76,7 @@ public class BGSInstance {
             return user.unfollow(toFollow);
         }
     }
-    public Response post(int id, String content){
+    public Response post(int id, String content,ConnectionsImpl connections){
         if(!loggedIn.containsKey(id))
             return new Error(5,"User not Logged In");
         User user=loggedIn.get(id);
@@ -87,14 +87,14 @@ public class BGSInstance {
         for (String userName:user.getFollowers()) {
             User follower = users.get(userName);
             if(follower.getLoggedIn()){
-                //TODO: send to follower the notification
+                connections.send(follower.getId(),content);
             }
             else
                 follower.addToMailBox(notification);
         }
         return new Ack(5,"post sent");
     }
-    public Response PM(int id, String content, String sendTo, Date date){
+    public Response PM(int id, String content, String sendTo, Date date,ConnectionsImpl connections){
         if(!loggedIn.containsKey(id))
             return new Error(6,"User not Logged In");
         User user=loggedIn.get(id);
@@ -107,7 +107,7 @@ public class BGSInstance {
         messages.add(pm);
         User sendToUser = users.get(sendTo);
         if(sendToUser.getLoggedIn()){
-            //TODO: send to follower the notification
+            connections.send(sendToUser.getId(),content);
         }
         else
             sendToUser.addToMailBox(notification);

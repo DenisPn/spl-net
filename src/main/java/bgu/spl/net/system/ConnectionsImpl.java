@@ -4,6 +4,7 @@ import bgu.spl.net.api.bidi.Connections;
 import bgu.spl.net.srv.BlockingConnectionHandler;
 import bgu.spl.net.srv.bidi.ConnectionHandler;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 
@@ -24,9 +25,15 @@ public class ConnectionsImpl<T> implements Connections<T> {
 
     @Override
     public void disconnect(int connectionId) {
-        connections.remove(connectionId);
+        ConnectionHandler<T> t=connections.remove(connectionId);
+        try {
+            t.close();
+        }
+        catch (IOException e){
+
+        }
     }
-    public void connect(int id,BlockingConnectionHandler<T> handler){
+    public void connect(int id,ConnectionHandler<T> handler){
         connections.put(id,handler);
     }
     public boolean connected(int id){

@@ -10,7 +10,7 @@ public class Error extends Response {
 
     @Override
     public String getContent() {
-        return opCode + " " + this.getClass() + " " + optional;
+        return "ACK " + opCode+" " + optional;
     }
 
     @Override

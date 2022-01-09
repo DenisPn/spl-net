@@ -21,7 +21,6 @@ public class ReactorMain {
         factory.put((short) 6, PM::new);
         factory.put((short) 7, LogStat::new);
         factory.put((short) 8, Stat::new);
-        factory.put((short) 9, Notification::new);
         factory.put((short) 12, Block::new);
         Server.reactor(
                 Runtime.getRuntime().availableProcessors(),

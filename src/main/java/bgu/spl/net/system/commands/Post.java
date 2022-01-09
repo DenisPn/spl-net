@@ -8,6 +8,6 @@ import java.io.Serializable;
 public class Post implements Command<String> {
     @Override
     public Serializable execute(int id, String arg, BGSInstance instance, ConnectionsImpl connections) {
-        return null;
+        return instance.post(id,arg.substring(0,arg.length()-1),connections).getContent(); //remove 0 bit from string
     }
 }

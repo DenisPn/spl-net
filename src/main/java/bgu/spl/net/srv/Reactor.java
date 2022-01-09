@@ -3,14 +3,18 @@ package bgu.spl.net.srv;
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
+import bgu.spl.net.system.ConnectionsImpl;
+import javafx.beans.binding.MapExpression;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 
@@ -21,6 +25,9 @@ public class Reactor<T> implements Server<T> {
     private final Supplier<MessageEncoderDecoder<T>> readerFactory;
     private final ActorThreadPool pool;
     private Selector selector;
+    HashMap<SocketAddress,Integer> socketMap;
+    int idTracker;
+    private ConnectionsImpl<T> connections;
 
     private Thread selectorThread;
     private final ConcurrentLinkedQueue<Runnable> selectorTasks = new ConcurrentLinkedQueue<>();
@@ -49,7 +56,7 @@ public class Reactor<T> implements Server<T> {
             serverSock.configureBlocking(false);
             serverSock.register(selector, SelectionKey.OP_ACCEPT);
 			System.out.println("Server started");
-
+            this.connections=new ConnectionsImpl<>();
             while (!Thread.currentThread().isInterrupted()) {
 
                 selector.select();
@@ -96,12 +103,24 @@ public class Reactor<T> implements Server<T> {
 
     private void handleAccept(ServerSocketChannel serverChan, Selector selector) throws IOException {
         SocketChannel clientChan = serverChan.accept();
+        int id;
         clientChan.configureBlocking(false);
+        if(!socketMap.containsKey(clientChan.getRemoteAddress())){
+            id=idTracker;
+            socketMap.put(clientChan.getRemoteAddress(),id);
+            idTracker++;
+        }
+        else{
+            id=socketMap.get(clientChan.getRemoteAddress());
+        }
         final NonBlockingConnectionHandler<T> handler = new NonBlockingConnectionHandler<T>(
                 readerFactory.get(),
                 protocolFactory.get(),
                 clientChan,
                 this);
+        connections.connect(id,handler);
+        handler.startProtocol(id,connections);
+
         clientChan.register(selector, SelectionKey.OP_READ, handler);
     }
 

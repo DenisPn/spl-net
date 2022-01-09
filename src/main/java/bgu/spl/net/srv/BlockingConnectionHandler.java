@@ -21,15 +21,15 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     private BufferedInputStream in;
     private BufferedOutputStream out;
     private volatile boolean connected = true;
-    private final ConnectionsImpl connections;
-    private final Integer id;
+  //  private final ConnectionsImpl connections;
+ //   private final Integer id;
 
-    public BlockingConnectionHandler(Socket sock, MessageEncoderDecoder<T> reader, BidiMessagingProtocol<T> protocol, ConnectionsImpl connections,Integer id) {
+    public BlockingConnectionHandler(Socket sock, MessageEncoderDecoder<T> reader, BidiMessagingProtocol<T> protocol) {
         this.sock = sock;
         this.encdec = reader;
         this.protocol = protocol;
-        this.connections=connections;
-        this.id=id;
+    //    this.connections=connections;
+    //    this.id=id;
     }
 
     @Override
@@ -38,7 +38,7 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
             int read;
             in = new BufferedInputStream(sock.getInputStream());
             out = new BufferedOutputStream(sock.getOutputStream());
-            connections.connect(id,this);
+          //  connections.connect(id,this);
             while (!protocol.shouldTerminate() && connected && (read = in.read()) >= 0) {
                 T nextMessage = encdec.decodeNextByte((byte) read);
                 if (nextMessage != null) {
@@ -58,7 +58,6 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     @Override
     public void close() throws IOException {
         connected = false;
-        connections.disconnect(id);
         sock.close();
     }
 
@@ -71,5 +70,8 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
         catch (IOException ex) {
             ex.printStackTrace();
         }
+    }
+    public void startProtocol(int id,ConnectionsImpl<T> connections){
+        protocol.start(id,connections);
     }
 }

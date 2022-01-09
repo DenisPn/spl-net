@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.function.Supplier;
 
@@ -18,7 +19,7 @@ public abstract class BaseServer<T> implements Server<T> {
     private final Supplier<BidiMessagingProtocol<T>> protocolFactory;
     private final Supplier<MessageEncoderDecoder<T>> encdecFactory;
     private ServerSocket sock;
-    private final HashMap<InetAddress,Integer> socketMap;
+    private final HashMap<SocketAddress,Integer> socketMap;
     int idTracker=0;
 
     public BaseServer(
@@ -35,7 +36,7 @@ public abstract class BaseServer<T> implements Server<T> {
 
     @Override
     public void serve() {
-        ConnectionsImpl connections=new ConnectionsImpl();
+        ConnectionsImpl<T> connections=new ConnectionsImpl<>();
         try (ServerSocket serverSock = new ServerSocket(port)) {
 			System.out.println("Server started");
 
@@ -44,21 +45,21 @@ public abstract class BaseServer<T> implements Server<T> {
             while (!Thread.currentThread().isInterrupted()) {
                 int id;
                 Socket clientSock = serverSock.accept();
-                if(!socketMap.containsKey(clientSock)){
+                if(!socketMap.containsKey(clientSock.getRemoteSocketAddress())){
                     id=idTracker;
-                    socketMap.put(clientSock.getLocalAddress(),id);
+                    socketMap.put(clientSock.getRemoteSocketAddress(),id);
                     idTracker++;
                 }
                 else{
-                    id=socketMap.get(clientSock);
+                    id=socketMap.get(clientSock.getRemoteSocketAddress());
                 }
 
                 BlockingConnectionHandler<T> handler = new BlockingConnectionHandler<T>(
                         clientSock,
                         encdecFactory.get(),
-                        protocolFactory.get(),
-                        connections,id);
-
+                        protocolFactory.get());
+                connections.connect(id,handler);
+                handler.startProtocol(id,connections);
                 execute(handler);
             }
         } catch (IOException ex) {

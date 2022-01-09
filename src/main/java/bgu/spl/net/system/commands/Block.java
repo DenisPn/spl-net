@@ -8,6 +8,6 @@ import java.io.Serializable;
 public class Block implements Command<String>{
     @Override
     public Serializable execute(int id, String arg, BGSInstance instance, ConnectionsImpl connections) {
-        return null;
+        return instance.block(id,arg.substring(0,arg.length()-1)).getContent();
     }
 }
