@@ -11,7 +11,6 @@ import java.util.function.Supplier;
 public class TPCMain {
 
     public static void main(String[] args){
-    //    ConnectionsImpl connections=new ConnectionsImpl();
         BGSInstance bgs=new BGSInstance();
         HashMap<Short, Supplier<Command>> factory=new HashMap();
         factory.put((short) 1, Register::new);
